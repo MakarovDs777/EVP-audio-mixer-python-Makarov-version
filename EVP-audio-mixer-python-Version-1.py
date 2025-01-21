@@ -59,6 +59,7 @@ def start_audio_mosaic(audio_mosaic):
 # Создание графического интерфейса
 root = tk.Tk()
 root.title("Генератор случайного аудио")
+root.geometry("320x120")  # Установка размера окна
 
 audio_mosaic = AudioMosaic()
 
