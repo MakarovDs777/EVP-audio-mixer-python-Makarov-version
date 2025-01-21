@@ -4,49 +4,71 @@ import random
 import numpy as np
 import pygame
 from threading import Thread
+import time
 from pydub import AudioSegment
 
-def convert_audio_to_segments(path):
-    audio = AudioSegment.from_file(path)  # Загружаем аудиофайл
-    segments = []
-    current_time = 0
+class AudioMosaic:
+    def __init__(self):
+        self.segments = []
+        self.sample_rate = 0
+        self.is_playing = False
+        pygame.mixer.init()  # Инициализация pygame mixer при создании объекта
 
-    while current_time < len(audio):
-        segment_duration_ms = random.randint(100, 1000)  # Случайная длительность от 100 мс до 1000 мс
-        segment = audio[current_time:current_time + segment_duration_ms]  # Получаем кусок аудио
-        segments.append(segment.raw_data)  # Добавляем сырье в список сегментов
-        current_time += segment_duration_ms  # Обновляем текущее время
+    def convert_audio_to_segments(self, path):
+        audio = AudioSegment.from_file(path)  # Загружаем аудиофайл
+        self.segments = []
+        current_time = 0
 
-    return segments, audio.frame_rate  # Возвращаем список сегментов и частоту дискретизации
+        while current_time < len(audio):
+            segment_duration_ms = random.randint(100, 1000)  # Случайная длительность от 100 мс до 1000 мс
+            segment = audio[current_time:current_time + segment_duration_ms]  # Получаем кусок аудио
+            self.segments.append(segment.raw_data)  # Добавляем сырье в список сегментов
+            current_time += segment_duration_ms  # Обновляем текущее время
 
-def mix_audio_segments(segments):
-    random.shuffle(segments)  # Перемешиваем сегменты
-    return b''.join(segments)  # Соединяем сегменты обратно в один поток байтов
+        self.sample_rate = audio.frame_rate  # Сохраняем частоту дискретизации
 
-def play_sound(shuffled_audio, sample_rate):
-    pygame.mixer.init(frequency=sample_rate, size=-16, channels=1)
-    sound = pygame.mixer.Sound(buffer=shuffled_audio)
-    sound.play()
+    def mix_audio_segments(self):
+        random.shuffle(self.segments)  # Перемешиваем сегменты
+        return b''.join(self.segments)  # Соединяем сегменты обратно в один поток байтов
 
-def start_audio_mosaic():
+    def play_audio(self):
+        self.is_playing = True
+        while self.is_playing:
+            shuffled_audio = self.mix_audio_segments()  # Перемешиваем аудио каждый раз
+            
+            # Преобразование байтов в массив NumPy и создание звука
+            sound_array = np.frombuffer(shuffled_audio, dtype=np.int16)
+            pygame.mixer.Sound(buffer=sound_array).play()
+
+            # Даем время на воспроизведение сегментов
+            time.sleep(len(shuffled_audio) / (self.sample_rate * 2))  # Подсчет времени в секунды
+
+    def stop_audio(self):
+        self.is_playing = False  # Устанавливаем флаг в False
+        pygame.mixer.stop()  # Останавливаем воспроизведение музыки
+
+def start_audio_mosaic(audio_mosaic):
     audio_file_path = filedialog.askopenfilename(
         title="Выберите аудио файл", 
         filetypes=[("Audio Files", "*.wav;*.mp3;*.ogg;*.flac")]
     )
 
     if audio_file_path:
-        segments, sample_rate = convert_audio_to_segments(audio_file_path)  # Получаем сегменты состояния
-        shuffled_audio = mix_audio_segments(segments)  # Перемешиваем сегменты
-
-        # Запуск воспроизведения перемешанного аудио
-        Thread(target=play_sound, args=(shuffled_audio, sample_rate), daemon=True).start()
+        audio_mosaic.convert_audio_to_segments(audio_file_path)  # Получаем сегменты состояния
+        Thread(target=audio_mosaic.play_audio, daemon=True).start()  # Запуск воспроизведения перемешанного аудио
 
 # Создание графического интерфейса
 root = tk.Tk()
 root.title("Генератор случайного аудио")
+root.geometry("320x120")  # Установка размера окна
 
-start_button = tk.Button(root, text="Начать", command=start_audio_mosaic)
+audio_mosaic = AudioMosaic()
+
+start_button = tk.Button(root, text="Начать", command=lambda: start_audio_mosaic(audio_mosaic))
 start_button.pack(pady=20)
+
+stop_button = tk.Button(root, text="Стоп", command=audio_mosaic.stop_audio)
+stop_button.pack(pady=10)
 
 # Запустить основной цикл интерфейса
 root.mainloop()
