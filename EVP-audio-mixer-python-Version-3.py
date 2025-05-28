@@ -30,13 +30,12 @@ class AudioMosaic:
         return segments, audio.frame_rate
 
     def prepare_segments(self, files):
-        # Объединяем сегменты из всех файлов
         all_segments = []
         sample_rate = 0
         for file in files:
             segments, rate = self.convert_audio_to_segments(file)
             all_segments.extend(segments)
-            sample_rate = rate  # предполагаем одинаковую частоту для всех
+            sample_rate = rate
         self.segments = all_segments
         self.sample_rate = sample_rate
 
@@ -51,7 +50,7 @@ class AudioMosaic:
             sound_array = np.frombuffer(shuffled_audio, dtype=np.int16)
             sound = pygame.mixer.Sound(buffer=sound_array)
             sound.play()
-            duration = len(shuffled_audio) / (self.sample_rate * 2)  # 2 байта на сэмпл
+            duration = len(shuffled_audio) / (self.sample_rate * 2)
             time.sleep(duration)
 
     def start_playback(self):
@@ -66,7 +65,7 @@ class AudioMosaic:
 # Создаем главное окно
 root = tk.Tk()
 root.title("Генератор случайного аудио")
-root.geometry("500x400")  # Размер окна
+root.geometry("600x400")
 
 audio_mosaic = AudioMosaic()
 
@@ -94,7 +93,18 @@ def select_audio():
         selected_audios.append(file_path)
         listbox.insert(tk.END, file_path)
 
-# --- Кнопки управления воспроизведением ---
+# --- Удаление выбранного файла из списка ---
+def remove_selected():
+    global selected_audios
+    selected_indices = listbox.curselection()
+    if not selected_indices:
+        messagebox.showwarning("Предупреждение", "Выберите файл для удаления.")
+        return
+    for index in reversed(selected_indices):
+        listbox.delete(index)
+        del selected_audios[index]
+
+# --- Воспроизведение и остановка ---
 def start_audio():
     global selected_audios
     if not selected_audios:
@@ -118,10 +128,12 @@ start_button.pack(side=tk.LEFT, padx=10)
 stop_button = tk.Button(button_frame, text="Стоп", command=stop_audio)
 stop_button.pack(side=tk.LEFT, padx=10)
 
+remove_button = tk.Button(root, text="Удалить выбранное", command=remove_selected)
+remove_button.pack(pady=5)
+
 # --- Кнопка выбора файла ---
 select_button = tk.Button(root, text="Выбрать аудио", command=select_audio)
 select_button.pack(pady=5)
 
 # Запуск интерфейса
 root.mainloop()
-
