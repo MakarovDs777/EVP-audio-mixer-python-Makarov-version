@@ -20,14 +20,25 @@ class AudioMosaic:
 
     def convert_audio_to_segments(self, path):
         audio = AudioSegment.from_file(path)
-        self.segments = []
+        segments = []
         current_time = 0
         while current_time < len(audio):
             segment_duration_ms = random.randint(100, 1000)
             segment = audio[current_time:current_time + segment_duration_ms]
-            self.segments.append(segment.raw_data)
+            segments.append(segment.raw_data)
             current_time += segment_duration_ms
-        self.sample_rate = audio.frame_rate
+        return segments, audio.frame_rate
+
+    def prepare_segments(self, files):
+        # Объединяем сегменты из всех файлов
+        all_segments = []
+        sample_rate = 0
+        for file in files:
+            segments, rate = self.convert_audio_to_segments(file)
+            all_segments.extend(segments)
+            sample_rate = rate  # предполагаем одинаковую частоту для всех
+        self.segments = all_segments
+        self.sample_rate = sample_rate
 
     def mix_audio_segments(self):
         random.shuffle(self.segments)
@@ -55,7 +66,7 @@ class AudioMosaic:
 # Создаем главное окно
 root = tk.Tk()
 root.title("Генератор случайного аудио")
-root.geometry("400x350")  # Размер окна
+root.geometry("500x400")  # Размер окна
 
 audio_mosaic = AudioMosaic()
 
@@ -63,7 +74,7 @@ audio_mosaic = AudioMosaic()
 frame_listbox = tk.Frame(root)
 frame_listbox.pack(pady=10)
 
-listbox = tk.Listbox(frame_listbox, width=50, height=8)
+listbox = tk.Listbox(frame_listbox, width=70, height=8)
 listbox.pack(side=tk.LEFT, padx=5)
 
 scrollbar = tk.Scrollbar(frame_listbox, orient=tk.VERTICAL)
@@ -89,8 +100,8 @@ def start_audio():
     if not selected_audios:
         messagebox.showwarning("Предупреждение", "Пожалуйста, выберите аудиофайлы.")
         return
-    # Загружаем сегменты для первого файла (или можно расширить)
-    audio_mosaic.convert_audio_to_segments(selected_audios[0])
+    # Объединяем сегменты из всех выбранных файлов
+    audio_mosaic.prepare_segments(selected_audios)
     audio_mosaic.start_playback()
 
 def stop_audio():
@@ -113,3 +124,4 @@ select_button.pack(pady=5)
 
 # Запуск интерфейса
 root.mainloop()
+
