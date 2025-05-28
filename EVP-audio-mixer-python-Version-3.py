@@ -51,7 +51,8 @@ class AudioMosaic:
             sound = pygame.mixer.Sound(buffer=sound_array)
             sound.play()
             duration = len(shuffled_audio) / (self.sample_rate * 2)
-            time.sleep(duration)
+            time.sleep(duration) 
+        # После окончания воспроизведения, цикл снова начнется, если self.is_playing == True
 
     def start_playback(self):
         if not self.is_playing:
@@ -87,7 +88,7 @@ def select_audio():
     global selected_audios
     file_path = filedialog.askopenfilename(
         title="Выберите аудио файл",
-        filetypes=[("Audio Files", "*.wav;*.mp3;*.ogg;*.flac")]
+        filetypes=[("Audio Files", "*.wav;*.mp3;*.mp4;*.ogg;*.flac")]
     )
     if file_path:
         selected_audios.append(file_path)
