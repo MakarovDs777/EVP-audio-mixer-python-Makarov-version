@@ -1,5 +1,3 @@
-
-https://github.com/user-attachments/assets/eeffdb8d-a17d-498e-a5b4-cff28b8f3630
 # EVP-audio-mixer-python-Makarov-version
 
 # Version 1
