@@ -82,8 +82,8 @@ class AudioMosaic:
 
 # Создаем главное окно
 root = tk.Tk()
-root.title("Генератор случайного аудио")
-root.geometry("900x600")
+root.title("EVP-аудиомикшер 4")
+root.geometry("900x350")
 
 audio_mosaic = AudioMosaic()
 
